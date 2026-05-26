@@ -37,8 +37,8 @@ export const categorySeed = [
   { slug: "others", name: "기타", description: "기타 제품군" }
 ] as const;
 
-const CATALOG = (name: string) => `/catalog/${name.toLowerCase()}`;
-const INFO = (name: string) => `/info/${name.toLowerCase()}`;
+const CATALOG = (name: string) => `/catalog/original/${name.toLowerCase()}`;
+const INFO = (name: string) => `/info/original/${name.toLowerCase()}`;
 
 type ProductInput = Omit<SeedProduct, "sortOrder">;
 

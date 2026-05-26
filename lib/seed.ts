@@ -155,7 +155,16 @@ export async function seedIfEmpty() {
     prisma.productImage.count(),
     prisma.product.findMany({ select: { sku: true }, take: 200 }),
     prisma.productCategory.findMany({ select: { slug: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.productImage.findFirst({ where: { url: { startsWith: "/products/" } }, select: { id: true } })
+    prisma.productImage.findFirst({
+      where: {
+        OR: [
+          { url: { startsWith: "/products/" } },
+          { url: { startsWith: "/catalog/" }, NOT: { url: { startsWith: "/catalog/original/" } } },
+          { url: { startsWith: "/info/" }, NOT: { url: { startsWith: "/info/original/" } } }
+        ]
+      },
+      select: { id: true }
+    })
   ]);
 
   const currentSkuSet = new Set(currentProducts.map((product) => product.sku));

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { upload as uploadBlob } from "@vercel/blob/client";
 import { motion } from "framer-motion";
 import {
@@ -60,14 +61,37 @@ const discountRate = (product: ProductDTO) => {
   return Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
 };
 
+type ImageVariant = "thumb" | "detail" | "original";
+
+function toWebpPath(src: string, variant: ImageVariant) {
+  if (!src || src.startsWith("http") || src.startsWith("data:") || src.startsWith("blob:")) return src;
+
+  const normalized = src.replaceAll("\\", "/");
+  const fileName = normalized.split("/").pop() || "";
+  const webpName = fileName.replace(/\.[^.]+$/, ".webp").toLowerCase();
+
+  if (normalized.startsWith("/catalog/original/")) {
+    if (variant === "original") return normalized;
+    return `/catalog/${variant}/${webpName}`;
+  }
+
+  if (normalized.startsWith("/info/original/")) {
+    if (variant === "original") return normalized;
+    return `/info/${variant === "thumb" ? "thumb" : "detail"}/${webpName}`;
+  }
+
+  return normalized;
+}
+
+
 
 async function prepareImageForUpload(file: File): Promise<File> {
   if (!file.type.startsWith("image/")) {
     throw new Error("이미지 파일만 업로드할 수 있습니다.");
   }
 
-  const maxDimension = 1800;
-  const targetBytes = 2.4 * 1024 * 1024;
+  const maxDimension = 1600;
+  const targetBytes = 1.4 * 1024 * 1024;
 
   if (file.size <= targetBytes && ["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
     return file;
@@ -83,7 +107,7 @@ async function prepareImageForUpload(file: File): Promise<File> {
     if (!ctx) return file;
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.86));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
     if (!blob) return file;
     return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" });
   } catch (error) {
@@ -358,7 +382,7 @@ function Hero({ products, gotoDetail, setPage }: { products: ProductDTO[]; gotoD
             </motion.div>
             <motion.div key={current.product.id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }} className="justify-self-end">
               <div className="rounded-[1.8rem] bg-white/95 p-4 shadow-2xl shadow-black/20">
-                <ProductPhoto src={mainImage(current.product)} alt={current.product.name} className="h-[320px] w-full md:h-[360px] md:w-[420px]" large />
+                <ProductPhoto src={mainImage(current.product)} alt={current.product.name} className="h-[320px] w-full md:h-[360px] md:w-[420px]" variant="detail" large priority />
                 <div className="mt-4 grid gap-2 rounded-[1.4rem] bg-slate-50 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -463,7 +487,7 @@ function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, 
       <div className="grid gap-8 lg:grid-cols-[1fr_430px]">
         <div>
           <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
-            <ProductPhoto src={image} alt={product.name} className="h-[460px] w-full" large />
+            <ProductPhoto src={image} alt={product.name} className="h-[460px] w-full" variant="detail" large priority />
             <div className="mt-4 grid grid-cols-3 gap-3 md:grid-cols-5">
               {activeImages.map((item, index) => (
                 <button key={item.id || item.url} onClick={() => setGalleryIndex(index)} className={`overflow-hidden rounded-2xl border-2 ${galleryIndex === index ? "border-red-500" : "border-transparent"}`}>
@@ -504,7 +528,7 @@ function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, 
 }
 
 function SpecTable({ product, infoImages }: { product: ProductDTO; infoImages: ProductDTO["images"] }) {
-  return <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-2xl font-black">제품 상세 정보</h2><p className="mt-2 text-slate-500">업로드한 제품 스펙 및 상세 안내 이미지를 기준으로 구성했습니다.</p><div className="mt-6 overflow-hidden rounded-2xl border border-slate-200"><table className="w-full text-sm"><tbody>{product.specs.map((spec) => <tr key={spec.id || spec.key} className="border-b border-slate-100 last:border-0"><th className="w-40 bg-slate-50 px-4 py-3 text-left font-black text-slate-700">{spec.key}</th><td className="px-4 py-3 text-slate-600">{spec.value}</td></tr>)}</tbody></table></div><div className="mt-6 grid gap-3 md:grid-cols-3">{["카탈로그 PDF", "제품 매뉴얼 PDF", "인증서 PDF"].map((item) => <button key={item} className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold"><FileText size={18} /> {item}</button>)}</div><div className="mt-8"><h3 className="text-xl font-black">상세 설명 이미지</h3><p className="mt-2 text-sm text-slate-500">INFO-image 폴더 기준으로 제품 상세 설명 이미지를 배치합니다.</p>{infoImages.length ? <div className="mt-4 grid gap-4">{infoImages.map((image) => <div key={image.id || image.url} className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50 p-3"><ProductPhoto src={image.url} alt={image.alt || `${product.name} 상세`} className="h-auto min-h-[240px] w-full" /></div>)}</div> : <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm font-bold text-slate-500">[이미지 파일 필요]</div>}</div></div>;
+  return <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-2xl font-black">제품 상세 정보</h2><p className="mt-2 text-slate-500">업로드한 제품 스펙 및 상세 안내 이미지를 기준으로 구성했습니다.</p><div className="mt-6 overflow-hidden rounded-2xl border border-slate-200"><table className="w-full text-sm"><tbody>{product.specs.map((spec) => <tr key={spec.id || spec.key} className="border-b border-slate-100 last:border-0"><th className="w-40 bg-slate-50 px-4 py-3 text-left font-black text-slate-700">{spec.key}</th><td className="px-4 py-3 text-slate-600">{spec.value}</td></tr>)}</tbody></table></div><div className="mt-6 grid gap-3 md:grid-cols-3">{["카탈로그 PDF", "제품 매뉴얼 PDF", "인증서 PDF"].map((item) => <button key={item} className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold"><FileText size={18} /> {item}</button>)}</div><div className="mt-8"><h3 className="text-xl font-black">상세 설명 이미지</h3><p className="mt-2 text-sm text-slate-500">INFO-image 폴더 기준으로 제품 상세 설명 이미지를 배치합니다.</p>{infoImages.length ? <div className="mt-4 grid gap-4">{infoImages.map((image) => <div key={image.id || image.url} className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50 p-3"><ProductPhoto src={image.url} alt={image.alt || `${product.name} 상세`} className="h-[680px] w-full" variant="detail" large /></div>)}</div> : <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm font-bold text-slate-500">[이미지 파일 필요]</div>}</div></div>;
 }
 
 function ComparePage({ compare, setPage }: { compare: ProductDTO[]; setPage: (page: PageName) => void }) {
@@ -643,7 +667,50 @@ function CasesPage({ compact = false }: { compact?: boolean }) { const cards = [
 
 function TrustSection() { return <section className="bg-white py-12"><div className="mx-auto max-w-7xl px-4"><div className="grid gap-4 md:grid-cols-4"><Trust icon={ShieldCheck} title="DB 상품관리" text="Prisma + PostgreSQL 기반 상품 저장" /><Trust icon={Building2} title="B2B 견적문의" text="견적문의 API 저장 흐름" /><Trust icon={Truck} title="주문 저장" text="Mock 주문을 DB에 저장" /><Trust icon={Wrench} title="이미지 업로드" text="Vercel Blob / Local 어댑터" /></div></div></section>; }
 function Trust({ icon: Icon, title, text }: { icon: React.ElementType; title: string; text: string }) { return <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5"><Icon className="text-red-600" size={28} /><div className="mt-4 font-black">{title}</div><div className="mt-1 text-sm text-slate-500">{text}</div></div>; }
-function ProductPhoto({ src, alt, className = "", large = false }: { src?: string; alt: string; className?: string; large?: boolean }) { const [failed, setFailed] = useState(false); if (failed || !src) return <div className={`flex items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 text-center text-sm font-black text-cyan-300 ${className}`}><div><Camera className="mx-auto mb-2" size={large ? 44 : 26} />[이미지 파일 필요]</div></div>; return <div className={`overflow-hidden rounded-[1.25rem] bg-slate-100 ${className}`}><img src={src} alt={alt} onError={() => setFailed(true)} className="h-full w-full object-contain p-2 transition duration-500 hover:scale-105" loading="lazy" /></div>; }
+function ProductPhoto({
+  src,
+  alt,
+  className = "",
+  large = false,
+  variant = "thumb",
+  priority = false
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+  large?: boolean;
+  variant?: ImageVariant;
+  priority?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const optimizedSrc = src ? toWebpPath(src, variant) : "";
+
+  if (failed || !optimizedSrc) {
+    return (
+      <div className={`relative flex items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 text-center text-sm font-black text-cyan-300 ${className}`}>
+        <div><Camera className="mx-auto mb-2" size={large ? 44 : 26} />[이미지 파일 필요]</div>
+      </div>
+    );
+  }
+
+  const isRemote = optimizedSrc.startsWith("http");
+  const sizes = large ? "(max-width: 768px) 100vw, 720px" : "(max-width: 768px) 50vw, 280px";
+
+  return (
+    <div className={`relative overflow-hidden rounded-[1.25rem] bg-slate-100 ${className}`}>
+      <Image
+        src={optimizedSrc}
+        alt={alt}
+        fill
+        sizes={sizes}
+        priority={priority}
+        unoptimized={isRemote}
+        onError={() => setFailed(true)}
+        className="object-contain p-2 transition duration-500 hover:scale-105"
+      />
+    </div>
+  );
+}
 function PageTitle({ title, desc }: { title: string; desc: string }) { return <div className="rounded-[2rem] bg-white p-7 shadow-sm ring-1 ring-slate-200"><h1 className="text-3xl font-black tracking-tight md:text-4xl">{title}</h1><p className="mt-3 max-w-3xl text-slate-500">{desc}</p></div>; }
 function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-white backdrop-blur"><div className="text-xl font-black text-cyan-200">{value}</div><div className="mt-1 text-xs font-bold text-slate-300">{label}</div></div>; }
 function Filter({ label, values }: { label: string; values: string[] }) { return <div className="mt-5 border-t border-slate-100 pt-5"><div className="text-sm font-black">{label}</div><div className="mt-3 grid gap-2">{values.map((value) => <label key={value} className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" className="rounded" /> {value}</label>)}</div></div>; }

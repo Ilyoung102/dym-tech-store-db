@@ -270,3 +270,17 @@ https://YOUR_DOMAIN/api/admin/blob-status
 - 카탈로그 순서: 스마트 키친 허브 → 주방 TV → 도어락 → 욕실TV → 욕실폰 → 무선 AP → 주방 라디오 → 생활 정보기 → 기타
 - 총 21개 모델 기준으로 제품명과 이미지 파일을 직접 매칭
 - `_01` 또는 첫 번째 파일을 대표 이미지로 지정
+
+
+## v0.3.8 이미지 최적화 업그레이드
+- `public/products` 구버전 이미지 폴더를 사용하지 않음
+- `public/catalog/original`, `public/catalog/thumb`, `public/catalog/detail` 구조 적용
+- `public/info/original`, `public/info/thumb`, `public/info/detail` 구조 적용
+- 업로드된 제품/INFO 이미지를 WebP 썸네일과 상세용 이미지로 자동 생성
+- DB에는 원본 경로(`/catalog/original`, `/info/original`)를 저장하고 화면에서는 용도에 따라 thumb/detail을 자동 사용
+- 상품 카드/목록/장바구니/비교/관리자 목록은 thumb 사용
+- 상품 상세 메인/INFO 설명 이미지는 detail 사용
+- `next/image` 기반 ProductPhoto 컴포넌트 적용
+- 메인 대표 상품과 상세 메인 이미지만 `priority` 적용
+- 관리자 업로드 이미지는 브라우저에서 WebP로 압축 후 Blob 업로드
+- 기존 DB에 `/products/` 또는 이전 `/catalog/파일명` 경로가 남아 있으면 자동 `resetCatalog` 수행
