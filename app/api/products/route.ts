@@ -5,11 +5,26 @@ import { serializeProduct } from "@/lib/serialize";
 
 export const dynamic = "force-dynamic";
 
+let seedCheckPromise: Promise<unknown> | null = null;
+let seedChecked = false;
+
+async function ensureSeedCheckedOnce() {
+  if (process.env.AUTO_SEED_ON_EMPTY !== "true" || seedChecked) return;
+  if (!seedCheckPromise) {
+    seedCheckPromise = seedIfEmpty().then((result) => {
+      seedChecked = true;
+      return result;
+    }).catch((error) => {
+      seedCheckPromise = null;
+      throw error;
+    });
+  }
+  await seedCheckPromise;
+}
+
 export async function GET() {
   try {
-    if (process.env.AUTO_SEED_ON_EMPTY === "true") {
-      await seedIfEmpty();
-    }
+    await ensureSeedCheckedOnce();
 
     const categories = await prisma.productCategory.findMany({ orderBy: { sortOrder: "asc" } });
     const products = await prisma.product.findMany({

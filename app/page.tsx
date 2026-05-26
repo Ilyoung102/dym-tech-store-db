@@ -45,6 +45,7 @@ import {
   CircleHelp
 } from "lucide-react";
 import type { CartItem, ProductDTO, ProductSectionDTO, ProductSpecDTO } from "@/types/product";
+import { buildSeedProducts, categorySeed } from "@/lib/initial-data";
 
 type PageName = "home" | "products" | "detail" | "compare" | "cart" | "quote" | "cases" | "support" | "company" | "admin";
 type AdminView = "dashboard" | "products" | "orders" | "quotes" | "support";
@@ -140,20 +141,75 @@ const navItems: Array<[PageName, string]> = [
   ["admin", "관리자"]
 ];
 
+function buildStaticCatalog(): ProductsResponse {
+  const seedProducts = buildSeedProducts();
+  const products: ProductDTO[] = seedProducts.map((product) => ({
+    id: product.sku,
+    sku: product.sku,
+    slug: product.slug,
+    name: product.name,
+    category: product.category,
+    categorySlug: product.categorySlug,
+    description: product.description,
+    shortDesc: product.description.slice(0, 80),
+    price: product.price,
+    originalPrice: product.originalPrice,
+    stockStatus: product.stockStatus,
+    deliveryText: product.deliveryText,
+    badge: product.badge,
+    rating: product.rating,
+    reviewCount: product.reviewCount,
+    isVisible: true,
+    isFeatured: product.isFeatured,
+    sortOrder: product.sortOrder,
+    specs: product.specs.map((spec, index) => ({
+      id: `${product.sku}-spec-${index}`,
+      key: spec.key,
+      value: spec.value,
+      group: spec.group ?? "기본",
+      sortOrder: index
+    })),
+    images: product.images.map((image, index) => ({
+      id: `${product.sku}-image-${index}`,
+      url: image.url,
+      alt: image.alt ?? `${product.name} 이미지 ${index + 1}`,
+      type: image.type ?? (index === 0 ? "MAIN" : "DETAIL"),
+      sortOrder: index,
+      isMain: image.isMain ?? index === 0
+    }))
+  }));
+
+  const sections: ProductSectionDTO[] = categorySeed.map((category) => {
+    const items = products.filter((product) => product.categorySlug === category.slug);
+    return {
+      title: category.name,
+      slug: category.slug,
+      description: category.description,
+      count: items.length,
+      items
+    };
+  });
+
+  return { products, sections };
+}
+
+const STATIC_CATALOG = buildStaticCatalog();
+
 export default function HomePage() {
   const [page, setPage] = useState<PageName>("home");
   const [adminView, setAdminView] = useState<AdminView>("dashboard");
-  const [products, setProducts] = useState<ProductDTO[]>([]);
-  const [sections, setSections] = useState<ProductSectionDTO[]>([]);
-  const [selected, setSelected] = useState<ProductDTO | null>(null);
+  const [products, setProducts] = useState<ProductDTO[]>(STATIC_CATALOG.products);
+  const [sections, setSections] = useState<ProductSectionDTO[]>(STATIC_CATALOG.sections);
+  const [selected, setSelected] = useState<ProductDTO | null>(STATIC_CATALOG.products[0] ?? null);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [compare, setCompare] = useState<ProductDTO[]>([]);
+  const [compare, setCompare] = useState<ProductDTO[]>(STATIC_CATALOG.products.slice(0, 2));
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("전체");
   const [sectionFilter, setSectionFilter] = useState("전체");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dbReady, setDbReady] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
   const [admin, setAdmin] = useState<AdminUser | null>(null);
 
@@ -163,14 +219,15 @@ export default function HomePage() {
       const response = await fetch("/api/products", { cache: "no-store" });
       if (!response.ok) throw new Error("상품 목록을 불러오지 못했습니다.");
       const data = (await response.json()) as ProductsResponse;
+      setDbReady(true);
       setProducts(data.products);
       setSections(data.sections);
       setSelected((current) => {
         if (!data.products.length) return null;
         if (!current) return data.products[0];
-        return data.products.find((product) => product.id === current.id) || data.products[0];
+        return data.products.find((product) => product.id === current.id || product.sku === current.sku) || data.products[0];
       });
-      setCompare((current) => current.length ? current.map((item) => data.products.find((p) => p.id === item.id) || item).slice(0, 4) : data.products.slice(0, 2));
+      setCompare((current) => current.length ? current.map((item) => data.products.find((p) => p.id === item.id || p.sku === item.sku) || item).slice(0, 4) : data.products.slice(0, 2));
     } catch (error) {
       console.error(error);
       setToast({ kind: "error", message: "상품 DB/API 연결을 확인해 주세요." });
@@ -235,9 +292,9 @@ export default function HomePage() {
       {toast && <ToastBox toast={toast} onClose={() => setToast(null)} />}
 
       <main>
-        {loading && <LoadingBlock />}
+        {loading && <SyncNotice />}
 
-        {!loading && page === "home" && (
+        {page === "home" && (
           <>
             <Hero products={products} gotoDetail={gotoDetail} setPage={setPage} />
             <ProductPreviewShowcase sections={sections} selectedFilter={sectionFilter} setSelectedFilter={setSectionFilter} gotoDetail={gotoDetail} addCart={addCart} addCompare={addCompare} />
@@ -246,21 +303,21 @@ export default function HomePage() {
           </>
         )}
 
-        {!loading && page === "products" && (
+        {page === "products" && (
           <ProductsPage products={filteredProducts} categories={categories} category={category} setCategory={setCategory} gotoDetail={gotoDetail} addCart={addCart} addCompare={addCompare} />
         )}
 
-        {!loading && page === "detail" && selected && (
+        {page === "detail" && selected && (
           <DetailPage product={selected} galleryIndex={galleryIndex} setGalleryIndex={setGalleryIndex} setPage={setPage} addCart={addCart} addCompare={addCompare} />
         )}
 
-        {!loading && page === "compare" && <ComparePage compare={compare} setPage={setPage} />}
-        {!loading && page === "cart" && <CartPage cart={cart} setCart={setCart} total={total} setPage={setPage} setToast={setToast} />}
-        {!loading && page === "quote" && <QuotePage products={products} setToast={setToast} />}
-        {!loading && page === "cases" && <CasesPage />}
-        {!loading && page === "support" && <SimpleListPage title="고객지원" desc="공지사항, FAQ, 배송/설치 안내, A/S 접수, 자료실을 통합하는 고객지원 화면" items={["공지사항", "FAQ", "제품구입 안내", "배송/설치 안내", "A/S 접수", "카탈로그 다운로드", "1:1 문의"]} />}
-        {!loading && page === "company" && <SimpleListPage title="회사소개" desc="기업 개요, 연혁, 인증현황, 특허현황, 찾아오시는 길을 제공하는 기업 홈페이지형 화면" items={["회사 개요", "경영이념", "연혁", "인증현황", "특허현황", "찾아오시는 길"]} />}
-        {!loading && page === "admin" && <AdminPage admin={admin} setAdmin={setAdmin} adminView={adminView} setAdminView={setAdminView} products={products} sections={sections} reloadProducts={loadProducts} setToast={setToast} />}
+        {page === "compare" && <ComparePage compare={compare} setPage={setPage} />}
+        {page === "cart" && <CartPage cart={cart} setCart={setCart} total={total} setPage={setPage} setToast={setToast} />}
+        {page === "quote" && <QuotePage products={products} setToast={setToast} />}
+        {page === "cases" && <CasesPage />}
+        {page === "support" && <SimpleListPage title="고객지원" desc="공지사항, FAQ, 배송/설치 안내, A/S 접수, 자료실을 통합하는 고객지원 화면" items={["공지사항", "FAQ", "제품구입 안내", "배송/설치 안내", "A/S 접수", "카탈로그 다운로드", "1:1 문의"]} />}
+        {page === "company" && <SimpleListPage title="회사소개" desc="기업 개요, 연혁, 인증현황, 특허현황, 찾아오시는 길을 제공하는 기업 홈페이지형 화면" items={["회사 개요", "경영이념", "연혁", "인증현황", "특허현황", "찾아오시는 길"]} />}
+        {page === "admin" && (dbReady ? <AdminPage admin={admin} setAdmin={setAdmin} adminView={adminView} setAdminView={setAdminView} products={products} sections={sections} reloadProducts={loadProducts} setToast={setToast} /> : <AdminDbLoading />)}
       </main>
 
       <button onClick={() => setPage("quote")} className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-red-600 px-5 py-4 font-black text-white shadow-2xl shadow-red-300/40">
@@ -357,11 +414,12 @@ function Hero({ products, gotoDetail, setPage }: { products: ProductDTO[]; gotoD
 
   const Icon = current.icon;
   return (
-    <section className="relative overflow-hidden bg-slate-950">
-      <div className="absolute inset-0 bg-cover bg-center opacity-40" style={{ backgroundImage: `url(${current.bg})` }} />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/30" />
+    <section className="relative overflow-hidden bg-slate-900">
+      <Image src={current.bg} alt="" fill priority sizes="100vw" className="object-cover opacity-70" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-slate-950/30 to-slate-900/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_35%,rgba(255,255,255,0.18),transparent_34%)]" />
       <div className="relative mx-auto max-w-7xl px-4 py-10 md:py-14">
-        <div className="overflow-hidden rounded-[2rem] border border-white/10 shadow-2xl shadow-black/25">
+        <div className="overflow-hidden rounded-[2rem] border border-white/20 bg-white/5 shadow-2xl shadow-black/20 backdrop-blur-[2px]">
           <div className="grid min-h-[520px] gap-8 px-6 py-8 md:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-12">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur">
@@ -396,7 +454,7 @@ function Hero({ products, gotoDetail, setPage }: { products: ProductDTO[]; gotoD
               </div>
             </motion.div>
           </div>
-          <div className="flex items-center justify-between gap-4 border-t border-white/10 bg-black/45 px-6 py-4 backdrop-blur">
+          <div className="flex items-center justify-between gap-4 border-t border-white/15 bg-white/10 px-6 py-4 backdrop-blur">
             <div className="flex gap-2">
               {slides.map((slide, index) => (
                 <button key={slide.product.id} onClick={() => setHeroIndex(index)} className={`h-2.5 rounded-full transition ${heroIndex === index ? "w-8 bg-white" : "w-2.5 bg-white/40"}`} aria-label={`${slide.product.name} 선택`} />
@@ -717,7 +775,29 @@ function Filter({ label, values }: { label: string; values: string[] }) { return
 function InfoLine({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) { return <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm"><Icon size={18} className="text-red-600" /><span className="w-12 font-black text-slate-700">{label}</span><span className="text-slate-500">{value}</span></div>; }
 function SimpleListPage({ title, desc, items }: { title: string; desc: string; items: string[] }) { return <section className="mx-auto max-w-7xl px-4 py-10"><PageTitle title={title} desc={desc} /><div className="mt-6 grid gap-4 md:grid-cols-3">{items.map((item) => <div key={item} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><CheckCircle2 className="text-red-600" /><div className="mt-4 text-lg font-black">{item}</div><p className="mt-2 text-sm text-slate-500">운영 데이터와 관리자 등록 정보로 확장되는 섹션입니다.</p></div>)}</div></section>; }
 function EmptyState({ title, desc }: { title: string; desc: string }) { return <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center"><ImagePlus className="mx-auto text-slate-300" size={52} /><div className="mt-4 text-xl font-black">{title}</div><p className="mt-2 text-sm text-slate-500">{desc}</p></div>; }
-function LoadingBlock() { return <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-24 text-slate-500"><Loader2 className="mr-3 animate-spin" /> 상품 DB를 불러오는 중입니다.</div>; }
+function SyncNotice() {
+  return (
+    <div className="mx-auto mt-4 max-w-7xl px-4">
+      <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 shadow-sm">
+        <Loader2 className="animate-spin" size={16} /> 기본 내장 카탈로그를 먼저 표시하고, DB 상품 정보를 백그라운드로 동기화하는 중입니다.
+      </div>
+    </div>
+  );
+}
+
+function AdminDbLoading() {
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-14">
+      <div className="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <Loader2 className="mx-auto animate-spin text-red-600" size={42} />
+        <div className="mt-4 text-xl font-black">관리자 DB 정보를 동기화하는 중입니다.</div>
+        <p className="mt-2 text-sm text-slate-500">홈 화면은 내장 이미지로 즉시 표시되지만, 관리자 편집은 실제 PostgreSQL 상품 ID가 필요합니다.</p>
+      </div>
+    </section>
+  );
+}
+
+function LoadingBlock() { return <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-24 text-slate-500"><Loader2 className="mr-3 animate-spin" /> 상품 DB를 확인하는 중입니다.</div>; }
 function AdminStat({ title, value }: { title: string; value: string }) { return <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm font-bold text-slate-500">{title}</div><div className="mt-2 text-2xl font-black">{value}</div></div>; }
 function AdminPlaceholder({ title }: { title: string }) { return <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm"><h3 className="text-xl font-black">{title}</h3><p className="mt-2 text-slate-500">이번 버전은 상품 DB/이미지 업로드/주문/견적 저장 흐름에 집중했습니다. 이 메뉴의 상세 CRUD는 다음 안정화 단계에서 확장하면 됩니다.</p></div>; }
 function Input({ label, value, onChange, required = false, type = "text" }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; type?: string }) { return <label className="grid gap-1 text-sm font-bold text-slate-700">{label}<input required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-red-400" /></label>; }
