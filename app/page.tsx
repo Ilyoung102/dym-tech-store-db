@@ -205,7 +205,7 @@ function buildStaticCatalog(): ProductsResponse {
 }
 
 const STATIC_CATALOG = buildStaticCatalog();
-const APP_VERSION = "v0.4.3";
+const APP_VERSION = "v0.4.4";
 
 export default function HomePage() {
   const [page, setPage] = useState<PageName>("home");
@@ -260,7 +260,8 @@ export default function HomePage() {
 
   useEffect(() => {
     void loadProducts();
-    void loadAdmin();
+    // 관리자 화면은 보안/테스트 혼선을 줄이기 위해 자동 세션 복원으로 바로 진입하지 않습니다.
+    // 상단 [관리자] 진입 시 항상 로그인 화면을 먼저 보여주고, 로그인 성공 후에만 admin 상태를 세팅합니다.
   }, []);
 
   const categories = useMemo(() => ["전체", ...sections.map((section) => section.title)], [sections]);
@@ -602,8 +603,8 @@ function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10">
       <button onClick={() => setPage("products")} className="mb-5 text-sm font-bold text-slate-500 hover:text-slate-900">← 상품 목록으로</button>
-      <div className="grid gap-8 lg:grid-cols-[1fr_430px]">
-        <div>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="min-w-0">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
             <ProductPhoto src={image} alt={product.name} className="h-[460px] w-full" variant="detail" large priority />
             <div className="mt-4 grid grid-cols-3 gap-3 md:grid-cols-5">
@@ -615,9 +616,8 @@ function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, 
               <div className="flex h-24 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-red-300 bg-red-50 text-xs font-black text-red-700"><Upload size={22} /> 관리자 교체</div>
             </div>
           </div>
-          <SpecTable product={product} infoImages={infoImages} />
         </div>
-        <aside className="h-fit rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80 lg:sticky lg:top-24">
+        <aside className="h-fit rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80">
           <div className="flex flex-wrap items-center gap-2">
             {product.badge && <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">{product.badge}</span>}
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{product.stockStatus}</span>
@@ -638,8 +638,12 @@ function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, 
             <button className="rounded-2xl bg-red-600 px-5 py-4 text-base font-black text-white"><CreditCard className="mr-2 inline" size={18} /> 바로 구매</button>
             <button onClick={() => setPage("quote")} className="rounded-2xl border border-slate-200 px-5 py-4 text-base font-black">견적 문의</button>
           </div>
+          <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-xs font-bold leading-5 text-slate-500">
+            가격/구매 영역은 상세 정보 스크롤을 따라 내려오지 않습니다. 상세 INFO 이미지는 아래 전체 폭으로 크게 확인할 수 있습니다.
+          </div>
         </aside>
       </div>
+      <SpecTable product={product} infoImages={infoImages} />
     </section>
   );
 }
@@ -744,7 +748,7 @@ function AdminPage({ admin, setAdmin, adminView, setAdminView, products, section
 function AdminLogin({ setAdmin, setToast }: { setAdmin: (admin: AdminUser | null) => void; setToast: (toast: Toast) => void }) {
   const [email, setEmail] = useState("admin@dym.test"); const [password, setPassword] = useState("admin1234"); const [loading, setLoading] = useState(false);
   async function submit(event: FormEvent) { event.preventDefault(); setLoading(true); try { const response = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) }); if (!response.ok) throw new Error("로그인 실패"); const data = (await response.json()) as { admin: AdminUser }; setAdmin(data.admin); setToast({ kind: "ok", message: "관리자 로그인 완료" }); } catch (error) { console.error(error); setToast({ kind: "error", message: "관리자 로그인 실패" }); } finally { setLoading(false); } }
-  return <section className="mx-auto max-w-md px-4 py-16"><div className="rounded-[2rem] border border-slate-200 bg-white p-7 shadow-sm"><h1 className="text-3xl font-black">관리자 로그인</h1><p className="mt-2 text-sm text-slate-500">seed 기본 계정은 .env의 ADMIN_EMAIL / ADMIN_PASSWORD 값입니다.</p><form onSubmit={submit} className="mt-6 grid gap-3"><Input label="이메일" value={email} onChange={setEmail} required /><Input label="비밀번호" value={password} onChange={setPassword} required type="password" /><button disabled={loading} className="mt-2 rounded-2xl bg-slate-950 px-5 py-4 font-black text-white disabled:opacity-60">{loading ? "로그인 중..." : "로그인"}</button></form></div></section>;
+  return <section className="mx-auto max-w-md px-4 py-16"><div className="rounded-[2rem] border border-slate-200 bg-white p-7 shadow-sm"><h1 className="text-3xl font-black">관리자 로그인</h1><p className="mt-2 text-sm text-slate-500">관리자 화면은 자동 로그인하지 않습니다. .env 또는 Vercel 환경변수의 ADMIN_EMAIL / ADMIN_PASSWORD 값으로 로그인하세요.</p><form onSubmit={submit} className="mt-6 grid gap-3"><Input label="이메일" value={email} onChange={setEmail} required /><Input label="비밀번호" value={password} onChange={setPassword} required type="password" /><button disabled={loading} className="mt-2 rounded-2xl bg-slate-950 px-5 py-4 font-black text-white disabled:opacity-60">{loading ? "로그인 중..." : "로그인"}</button></form></div></section>;
 }
 
 function AdminProductManager({ products, sections, reloadProducts, setToast }: { products: ProductDTO[]; sections: ProductSectionDTO[]; reloadProducts: () => Promise<void>; setToast: (toast: Toast) => void }) {
