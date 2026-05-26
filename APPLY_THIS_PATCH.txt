@@ -1,0 +1,17 @@
+Vercel npm install ETIMEDOUT build fix patch
+
+1) Copy these four files to the root of your existing project/repository:
+   - .npmrc
+   - vercel.json
+   - package.json
+   - package-lock.json
+
+2) Commit and push:
+   git add .npmrc vercel.json package.json package-lock.json
+   git commit -m "fix: force npm registry for vercel build"
+   git push
+
+3) In Vercel redeploy with build cache disabled:
+   Deployments > Redeploy > uncheck "Use existing Build Cache" > Redeploy
+
+This patch removes internal npm registry URLs from package-lock.json and forces npm to use https://registry.npmjs.org/.
