@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dym_tech_store
+    ports:
+      - "5432:5432"
+    volumes:
+      - dym_pg_data:/var/lib/postgresql/data
+volumes:
+  dym_pg_data:

@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String    @unique
+  description String?
+  sortOrder   Int       @default(0)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  sku           String          @unique
+  slug          String          @unique
+  name          String
+  description   String
+  shortDesc     String?
+  price         Int
+  originalPrice Int?
+  stockStatus   String          @default("재고 있음")
+  deliveryText  String?
+  badge         String?
+  rating        Float           @default(4.7)
+  reviewCount   Int             @default(0)
+  isVisible     Boolean         @default(true)
+  isFeatured    Boolean         @default(false)
+  sortOrder     Int             @default(0)
+
+  categoryId    String
+  category      ProductCategory @relation(fields: [categoryId], references: [id])
+
+  specs         ProductSpec[]
+  images        ProductImage[]
+  orderItems    OrderItem[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  url       String
+  pathname  String?
+  alt       String?
+  type      String   @default("MAIN") // MAIN, DETAIL, INSTALL, SPEC, CERT
+  sortOrder Int      @default(0)
+  isMain    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductSpec {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  key       String
+  value     String
+  group     String?  @default("기본 제원")
+  sortOrder Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuoteRequest {
+  id             String   @id @default(cuid())
+  companyName    String?
+  managerName    String
+  phone          String
+  email          String?
+  installPlace   String?
+  desiredProduct String?
+  quantity       Int      @default(1)
+  supplyType     String?
+  message        String
+  privacyAgreed  Boolean  @default(false)
+  status         String   @default("NEW")
+  adminMemo      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  orderNo        String      @unique
+  customerName   String
+  phone          String
+  email          String?
+  address        String
+  installAddress String?
+  installDate    DateTime?
+  requestMemo    String?
+  paymentMethod  String      @default("MOCK")
+  paymentStatus  String      @default("PENDING")
+  orderStatus    String      @default("NEW")
+  totalAmount    Int
+  items          OrderItem[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  sku       String
+  name      String
+  price     Int
+  quantity  Int
+  imageUrl  String?
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("관리자")
+  role         String   @default("SUPER_ADMIN")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String?
+  action    String
+  target    String?
+  targetId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
