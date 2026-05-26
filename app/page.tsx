@@ -147,11 +147,9 @@ async function readApiError(response: Response) {
 const navItems: Array<[PageName, string]> = [
   ["home", "홈"],
   ["products", "제품"],
-  ["compare", "제품비교"],
   ["cases", "시공/납품사례"],
   ["support", "고객지원"],
-  ["company", "회사소개"],
-  ["admin", "관리자"]
+  ["company", "회사소개"]
 ];
 
 function buildStaticCatalog(): ProductsResponse {
@@ -207,6 +205,7 @@ function buildStaticCatalog(): ProductsResponse {
 }
 
 const STATIC_CATALOG = buildStaticCatalog();
+const APP_VERSION = "v0.4.2";
 
 export default function HomePage() {
   const [page, setPage] = useState<PageName>("home");
@@ -324,11 +323,10 @@ export default function HomePage() {
           <DetailPage product={selected} galleryIndex={galleryIndex} setGalleryIndex={setGalleryIndex} setPage={setPage} addCart={addCart} addCompare={addCompare} />
         )}
 
-        {page === "compare" && <ComparePage compare={compare} setPage={setPage} />}
         {page === "cart" && <CartPage cart={cart} setCart={setCart} total={total} setPage={setPage} setToast={setToast} />}
         {page === "quote" && <QuotePage products={products} setToast={setToast} />}
         {page === "cases" && <CasesPage />}
-        {page === "support" && <SimpleListPage title="고객지원" desc="공지사항, FAQ, 배송/설치 안내, A/S 접수, 자료실을 통합하는 고객지원 화면" items={["공지사항", "FAQ", "제품구입 안내", "배송/설치 안내", "A/S 접수", "카탈로그 다운로드", "1:1 문의"]} />}
+        {page === "support" && <SimpleListPage title="고객지원" desc="공지사항, FAQ, 배송/설치 안내, A/S 접수, 자료실과 고객센터 안내를 통합하는 고객지원 화면" items={["공지사항", "FAQ", "제품구입 안내", "배송/설치 안내", "A/S 접수", "카탈로그 다운로드", "1:1 문의"]} />}
         {page === "company" && <SimpleListPage title="회사소개" desc="기업 개요, 연혁, 인증현황, 특허현황, 찾아오시는 길을 제공하는 기업 홈페이지형 화면" items={["회사 개요", "경영이념", "연혁", "인증현황", "특허현황", "찾아오시는 길"]} />}
         {page === "admin" && (dbReady ? <AdminPage admin={admin} setAdmin={setAdmin} adminView={adminView} setAdminView={setAdminView} products={products} sections={sections} reloadProducts={loadProducts} setToast={setToast} /> : <AdminDbLoading />)}
       </main>
@@ -342,25 +340,43 @@ export default function HomePage() {
 }
 
 function Header({ page, setPage, query, setQuery, cartCount, mobileMenu, setMobileMenu }: { page: PageName; setPage: (page: PageName) => void; query: string; setQuery: (value: string) => void; cartCount: number; mobileMenu: boolean; setMobileMenu: (value: boolean) => void }) {
+  const goPage = (target: PageName) => {
+    setPage(target);
+    setMobileMenu(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const addFavorite = () => {
+    setMobileMenu(false);
+    alert("브라우저 정책상 자동 즐겨찾기 등록은 제한됩니다. Ctrl+D 또는 브라우저 메뉴에서 즐겨찾기를 추가해 주세요.");
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="border-b border-slate-100 bg-slate-50 text-[12px] text-slate-600">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2">
-          <div className="font-semibold">고객센터 1811-6061 · 평일 09:00~18:00 · leejeou@dym.co.kr</div>
-          <div className="hidden md:block">스마트 키친 허브 · 주방TV · 도어락 · 욕실폰 · 무선 AP</div>
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="rounded-full bg-red-600 px-3 py-1 text-[11px] font-black text-white">NOTICE</span>
+            <span>[공지사항] 쇼핑몰 홈페이지 제작진행중입니다.</span>
+          </div>
+          <div className="flex items-center gap-3 text-[12px] font-black">
+            <button onClick={() => goPage("admin")} className="text-slate-700 hover:text-red-600">관리자</button>
+            <button onClick={() => goPage("support")} className="text-slate-700 hover:text-red-600">고객센터</button>
+            <button onClick={addFavorite} className="text-slate-700 hover:text-red-600">즐겨찾기</button>
+            <span className="rounded-full bg-slate-950 px-3 py-1 text-[11px] text-white">{APP_VERSION}</span>
+          </div>
         </div>
       </div>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-        <button onClick={() => setPage("home")} className="flex items-center gap-3">
+        <button onClick={() => goPage("home")} className="flex items-center gap-3">
           <img src="/brand/dym-mall-logo.png" alt="동영몰 로고" className="h-11 w-auto rounded-sm object-contain" />
           <div className="hidden text-left sm:block">
-            <div className="text-lg font-black tracking-tight">DONGYOUNG MALL</div>
+            <div className="text-lg font-black tracking-tight">DYM MALL</div>
             <div className="text-xs text-slate-500">동영엠텍 전자기기 쇼핑몰 개발/테스트 버전</div>
           </div>
         </button>
         <nav className="hidden items-center gap-1 lg:flex">
           {navItems.map(([id, label]) => (
-            <button key={id} onClick={() => setPage(id)} className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-red-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>{label}</button>
+            <button key={id} onClick={() => goPage(id)} className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-red-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>{label}</button>
           ))}
         </nav>
         <div className="hidden items-center gap-2 md:flex">
@@ -368,11 +384,10 @@ function Header({ page, setPage, query, setQuery, cartCount, mobileMenu, setMobi
             <Search size={16} className="text-slate-400" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} className="w-44 bg-transparent text-sm outline-none" placeholder="제품명/모델명 검색" />
           </div>
-          <button onClick={() => setPage("cart")} className="relative rounded-2xl border border-slate-200 p-2 hover:bg-slate-50">
+          <button onClick={() => goPage("cart")} className="relative rounded-2xl border border-slate-200 p-2 hover:bg-slate-50">
             <ShoppingCart size={20} />
             {cartCount > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">{cartCount}</span>}
           </button>
-          <button onClick={() => setPage("admin")} className="rounded-2xl border border-slate-200 p-2 hover:bg-slate-50"><User size={20} /></button>
         </div>
         <button onClick={() => setMobileMenu(!mobileMenu)} className="rounded-2xl border border-slate-200 p-2 lg:hidden">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
       </div>
@@ -383,8 +398,11 @@ function Header({ page, setPage, query, setQuery, cartCount, mobileMenu, setMobi
             <input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-sm outline-none" placeholder="제품명/모델명 검색" />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {navItems.map(([id, label]) => <button key={id} onClick={() => { setPage(id); setMobileMenu(false); }} className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">{label}</button>)}
-            <button onClick={() => { setPage("cart"); setMobileMenu(false); }} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white">장바구니 {cartCount}</button>
+            {navItems.map(([id, label]) => <button key={id} onClick={() => goPage(id)} className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">{label}</button>)}
+            <button onClick={() => goPage("admin")} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white">관리자</button>
+            <button onClick={() => goPage("cart")} className="rounded-xl bg-slate-950 px-3 py-2 text-sm font-bold text-white">장바구니 {cartCount}</button>
+            <button onClick={addFavorite} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">즐겨찾기</button>
+            <span className="rounded-xl border border-slate-200 px-3 py-2 text-center text-sm font-black text-slate-700">{APP_VERSION}</span>
           </div>
         </div>
       )}
@@ -534,7 +552,7 @@ function ProductSquare({ product, index, count, gotoDetail, addCart, addCompare 
           <div className="absolute bottom-0 left-0 right-0 p-4 text-white"><div className="text-[11px] font-bold text-cyan-200">{product.sku}</div><div className="mt-1 line-clamp-2 text-base font-black leading-5">{product.name}</div><div className="mt-2 flex items-end justify-between gap-2"><div>{product.originalPrice && <div className="text-xs text-slate-200 line-through">{fmt(product.originalPrice)}</div>}<div className="text-lg font-black">{fmt(product.price)}</div></div><div className="rounded-xl bg-white/15 px-2 py-1 text-[10px] font-black backdrop-blur">DB 상품</div></div></div>
         </div>
       </button>
-      <div className="grid grid-cols-3 gap-2 bg-white p-3"><button onClick={() => addCart(product)} className="col-span-2 rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white">장바구니</button><button onClick={() => addCompare(product)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">비교</button></div>
+      <div className="grid gap-2 bg-white p-3"><button onClick={() => addCart(product)} className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white">장바구니 담기</button></div>
     </div>
   );
 }
@@ -544,7 +562,7 @@ function ProductsPage({ products, categories, category, setCategory, gotoDetail,
 }
 
 function ProductCard({ product, gotoDetail, addCart, addCompare }: { product: ProductDTO; gotoDetail: (product: ProductDTO) => void; addCart: (product: ProductDTO) => void; addCompare: (product: ProductDTO) => void }) {
-  return <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><button onClick={() => gotoDetail(product)} className="w-full text-left"><div className="relative"><ProductPhoto src={mainImage(product)} alt={product.name} className="h-52 w-full" />{product.badge && <span className="absolute left-3 top-3 rounded-full bg-red-600 px-2 py-1 text-xs font-black text-slate-950">{product.badge}</span>}{discountRate(product) > 0 && <span className="absolute right-3 top-3 rounded-full bg-rose-500 px-2 py-1 text-xs font-black text-white">{discountRate(product)}%</span>}</div><div className="mt-4 flex items-center gap-2 text-xs text-slate-400"><span>{product.sku}</span><span>·</span><span className="font-bold text-amber-500">★ {product.rating}</span><span>({product.reviewCount})</span></div><div className="mt-2 text-lg font-black">{product.name}</div><p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">{product.description}</p><div className="mt-3 flex flex-wrap gap-1.5">{product.specs.slice(0, 3).map((spec) => <span key={`${product.id}-${spec.key}`} className="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">{spec.value}</span>)}</div><div className="mt-4 flex items-end justify-between gap-2"><div>{product.originalPrice && <div className="text-xs text-slate-400 line-through">{fmt(product.originalPrice)}</div>}<div className="text-xl font-black">{fmt(product.price)}</div></div><div className="text-right text-xs font-bold text-emerald-600">{product.stockStatus}<br/><span className="text-slate-400">{product.deliveryText}</span></div></div></button><div className="mt-4 grid grid-cols-3 gap-2"><button onClick={() => addCart(product)} className="col-span-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-bold text-white">장바구니</button><button onClick={() => addCompare(product)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold">비교</button></div></div>;
+  return <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><button onClick={() => gotoDetail(product)} className="w-full text-left"><div className="relative"><ProductPhoto src={mainImage(product)} alt={product.name} className="h-52 w-full" />{product.badge && <span className="absolute left-3 top-3 rounded-full bg-red-600 px-2 py-1 text-xs font-black text-slate-950">{product.badge}</span>}{discountRate(product) > 0 && <span className="absolute right-3 top-3 rounded-full bg-rose-500 px-2 py-1 text-xs font-black text-white">{discountRate(product)}%</span>}</div><div className="mt-4 flex items-center gap-2 text-xs text-slate-400"><span>{product.sku}</span><span>·</span><span className="font-bold text-amber-500">★ {product.rating}</span><span>({product.reviewCount})</span></div><div className="mt-2 text-lg font-black">{product.name}</div><p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">{product.description}</p><div className="mt-3 flex flex-wrap gap-1.5">{product.specs.slice(0, 3).map((spec) => <span key={`${product.id}-${spec.key}`} className="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">{spec.value}</span>)}</div><div className="mt-4 flex items-end justify-between gap-2"><div>{product.originalPrice && <div className="text-xs text-slate-400 line-through">{fmt(product.originalPrice)}</div>}<div className="text-xl font-black">{fmt(product.price)}</div></div><div className="text-right text-xs font-bold text-emerald-600">{product.stockStatus}<br/><span className="text-slate-400">{product.deliveryText}</span></div></div></button><div className="mt-4 grid gap-2"><button onClick={() => addCart(product)} className="rounded-xl bg-slate-950 px-3 py-2 text-sm font-bold text-white">장바구니 담기</button></div></div>;
 }
 
 function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, addCompare }: { product: ProductDTO; galleryIndex: number; setGalleryIndex: (index: number) => void; setPage: (page: PageName) => void; addCart: (product: ProductDTO) => void; addCompare: (product: ProductDTO) => void }) {
@@ -590,7 +608,6 @@ function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, 
             <button onClick={() => addCart(product)} className="rounded-2xl bg-slate-950 px-5 py-4 text-base font-black text-white">장바구니 담기</button>
             <button className="rounded-2xl bg-red-600 px-5 py-4 text-base font-black text-white"><CreditCard className="mr-2 inline" size={18} /> 바로 구매</button>
             <button onClick={() => setPage("quote")} className="rounded-2xl border border-slate-200 px-5 py-4 text-base font-black">견적 문의</button>
-            <button onClick={() => addCompare(product)} className="rounded-2xl px-5 py-4 font-bold hover:bg-slate-50">제품 비교 추가</button>
           </div>
         </aside>
       </div>
@@ -864,4 +881,41 @@ function AdminPlaceholder({ title }: { title: string }) { return <div className=
 function Input({ label, value, onChange, required = false, type = "text" }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; type?: string }) { return <label className="grid gap-1 text-sm font-bold text-slate-700">{label}<input required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-red-400" /></label>; }
 function Row({ k, v }: { k: string; v: string }) { return <div className="flex justify-between"><span className="text-slate-500">{k}</span><b>{v}</b></div>; }
 function ToastBox({ toast, onClose }: { toast: NonNullable<Toast>; onClose: () => void }) { const color = toast.kind === "ok" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : toast.kind === "error" ? "border-rose-200 bg-rose-50 text-rose-800" : "border-red-200 bg-red-50 text-red-800"; return <div className={`fixed left-1/2 top-20 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-black shadow-xl ${color}`}><span>{toast.message}</span><button onClick={onClose}><X size={16} /></button></div>; }
-function Footer() { return <footer className="mt-12 border-t border-slate-200 bg-white"><div className="mx-auto max-w-7xl px-4 py-10"><div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.9fr]"><div className="lg:pr-8"><img src="/brand/footer-logo.png" alt="동영엠텍" className="h-10 w-auto object-contain" /><div className="mt-4 text-sm leading-7 text-slate-600">(주)동영엠텍 경기도 군포시 당정로 18 ((주)동영엠텍)<br />대표 : 당유상 · 사업자등록번호 : 112-81-40075<br />통신판매업신고번호 : 제2018-경기군포-0434호<br />대표번호 : 1811-6061 · 팩스번호 : 031-477-3407<br />메일 : leejeou@dym.co.kr<br />copyright (c) dongyoungmall.com all rights reserved.</div></div><div className="text-sm leading-7 text-slate-600"><div className="text-base font-black text-slate-950">CS CENTER</div>1811-6061<br />평일 09:00~18:00<br />토요일 휴무</div><div className="text-sm leading-7 text-slate-600"><div className="text-base font-black text-slate-950">고객센터</div>서비스규정<br />자주하는 질문<br />사용설명서<br />설치동영상<br />갤러리<br />공지사항<br />1:1 문의하기</div><div className="text-sm leading-7 text-slate-600"><div className="text-base font-black text-slate-950">은행계좌 안내</div>185-057225-04-017<br />기업은행<br />[예금주 : (주)동영엠텍]</div></div></div></footer>; }
+function Footer() {
+  return (
+    <footer className="mt-12 border-t border-slate-200 bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-10">
+        <div className="mb-8 rounded-[2rem] border border-red-100 bg-red-50 p-6 shadow-sm">
+          <div className="text-sm font-black text-red-600">CUSTOMER CENTER</div>
+          <div className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">고객센터 1811-6061</div>
+          <div className="mt-3 text-sm font-semibold text-slate-600 md:text-base">평일 09:00~18:00 · 토요일 휴무 · leejeou@dym.co.kr</div>
+        </div>
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.9fr]">
+          <div className="lg:pr-8">
+            <img src="/brand/footer-logo.png" alt="동영엠텍" className="h-10 w-auto object-contain" />
+            <div className="mt-4 text-sm leading-7 text-slate-600">
+              (주)동영엠텍 경기도 군포시 당정로 18 ((주)동영엠텍)<br />
+              대표 : 당유상 · 사업자등록번호 : 112-81-40075<br />
+              통신판매업신고번호 : 제2018-경기군포-0434호<br />
+              대표번호 : 1811-6061 · 팩스번호 : 031-477-3407<br />
+              메일 : leejeou@dym.co.kr<br />
+              copyright (c) dongyoungmall.com all rights reserved.
+            </div>
+          </div>
+          <div className="text-sm leading-7 text-slate-600">
+            <div className="text-base font-black text-slate-950">CS CENTER</div>
+            1811-6061<br />평일 09:00~18:00<br />토요일 휴무
+          </div>
+          <div className="text-sm leading-7 text-slate-600">
+            <div className="text-base font-black text-slate-950">고객센터</div>
+            서비스규정<br />자주하는 질문<br />사용설명서<br />설치동영상<br />갤러리<br />공지사항<br />1:1 문의하기
+          </div>
+          <div className="text-sm leading-7 text-slate-600">
+            <div className="text-base font-black text-slate-950">은행계좌 안내</div>
+            185-057225-04-017<br />기업은행<br />[예금주 : (주)동영엠텍]
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

@@ -300,3 +300,12 @@ https://YOUR_DOMAIN/api/admin/blob-status
 - INFO detail WebP도 원본 해상도 보존 + 고품질로 다시 생성했습니다.
 - public/products 구버전 폴더가 있다면 완전히 삭제되도록 정리했습니다.
 - 제품 카드/목록은 여전히 thumb WebP를 사용하므로 목록 로딩 최적화는 유지됩니다.
+
+
+## v0.4.2 UI final sync
+- 정상 레포 ZIP 기준으로 상단 NOTICE/유틸 메뉴/버전 표시를 정리했습니다.
+- 상단 고객센터 문구는 제거하고 하단 Footer에 큰 고객센터 영역을 추가했습니다.
+- DONGYOUNG MALL 문구를 DYM MALL로 변경했습니다.
+- 제품비교 메뉴와 화면 노출 버튼을 제거했습니다.
+- 관리자 버튼을 최상단 유틸 메뉴로 이동하고 모바일 메뉴에서도 접근 가능하게 했습니다.
+- package-lock의 registry URL은 공식 npm registry 상태를 유지했습니다.
