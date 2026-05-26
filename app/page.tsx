@@ -47,7 +47,7 @@ import {
 import type { CartItem, ProductDTO, ProductSectionDTO, ProductSpecDTO } from "@/types/product";
 import { buildSeedProducts, categorySeed } from "@/lib/initial-data";
 
-type PageName = "home" | "products" | "detail" | "compare" | "cart" | "quote" | "cases" | "support" | "company" | "admin";
+type PageName = "home" | "products" | "detail" | "compare" | "cart" | "quote" | "cases" | "support" | "company" | "mypage" | "admin";
 type AdminView = "dashboard" | "products" | "orders" | "quotes" | "support";
 
 type AdminUser = { id: string; email: string; name: string; role: string };
@@ -205,7 +205,7 @@ function buildStaticCatalog(): ProductsResponse {
 }
 
 const STATIC_CATALOG = buildStaticCatalog();
-const APP_VERSION = "v0.4.2";
+const APP_VERSION = "v0.4.3";
 
 export default function HomePage() {
   const [page, setPage] = useState<PageName>("home");
@@ -328,7 +328,8 @@ export default function HomePage() {
         {page === "cases" && <CasesPage />}
         {page === "support" && <SimpleListPage title="고객지원" desc="공지사항, FAQ, 배송/설치 안내, A/S 접수, 자료실과 고객센터 안내를 통합하는 고객지원 화면" items={["공지사항", "FAQ", "제품구입 안내", "배송/설치 안내", "A/S 접수", "카탈로그 다운로드", "1:1 문의"]} />}
         {page === "company" && <SimpleListPage title="회사소개" desc="기업 개요, 연혁, 인증현황, 특허현황, 찾아오시는 길을 제공하는 기업 홈페이지형 화면" items={["회사 개요", "경영이념", "연혁", "인증현황", "특허현황", "찾아오시는 길"]} />}
-        {page === "admin" && (dbReady ? <AdminPage admin={admin} setAdmin={setAdmin} adminView={adminView} setAdminView={setAdminView} products={products} sections={sections} reloadProducts={loadProducts} setToast={setToast} /> : <AdminDbLoading />)}
+        {page === "mypage" && <SimpleListPage title="마이페이지" desc="주문 조회, 견적문의 내역, 관심상품, 장바구니를 통합할 수 있는 회원/고객 페이지 자리입니다." items={["주문 조회", "견적문의 내역", "관심상품", "장바구니", "회원정보 수정", "A/S 문의 내역"]} />}
+        {page === "admin" && (!admin ? <AdminPage admin={admin} setAdmin={setAdmin} adminView={adminView} setAdminView={setAdminView} products={products} sections={sections} reloadProducts={loadProducts} setToast={setToast} /> : dbReady ? <AdminPage admin={admin} setAdmin={setAdmin} adminView={adminView} setAdminView={setAdminView} products={products} sections={sections} reloadProducts={loadProducts} setToast={setToast} /> : <AdminDbLoading />)}
       </main>
 
       <button onClick={() => setPage("quote")} className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-red-600 px-5 py-4 font-black text-white shadow-2xl shadow-red-300/40">
@@ -359,27 +360,29 @@ function Header({ page, setPage, query, setQuery, cartCount, mobileMenu, setMobi
             <span>[공지사항] 쇼핑몰 홈페이지 제작진행중입니다.</span>
           </div>
           <div className="flex items-center gap-3 text-[12px] font-black">
-            <button onClick={() => goPage("admin")} className="text-slate-700 hover:text-red-600">관리자</button>
-            <button onClick={() => goPage("support")} className="text-slate-700 hover:text-red-600">고객센터</button>
-            <button onClick={addFavorite} className="text-slate-700 hover:text-red-600">즐겨찾기</button>
-            <span className="rounded-full bg-slate-950 px-3 py-1 text-[11px] text-white">{APP_VERSION}</span>
+            <button onClick={() => goPage("mypage")} className="inline-flex items-center gap-1 whitespace-nowrap text-slate-700 hover:text-red-600"><User size={14} /> 마이페이지</button>
+            <button onClick={() => goPage("admin")} className="whitespace-nowrap text-slate-700 hover:text-red-600">관리자</button>
+            <button onClick={() => goPage("support")} className="whitespace-nowrap text-slate-700 hover:text-red-600">고객센터</button>
+            <button onClick={addFavorite} className="whitespace-nowrap text-slate-700 hover:text-red-600">즐겨찾기</button>
+            <span className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1 text-[11px] text-white">{APP_VERSION}</span>
           </div>
         </div>
       </div>
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-        <button onClick={() => goPage("home")} className="flex items-center gap-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+        <button onClick={() => goPage("home")} className="flex shrink-0 items-center gap-3">
           <img src="/brand/dym-mall-logo.png" alt="동영몰 로고" className="h-11 w-auto rounded-sm object-contain" />
-          <div className="hidden text-left sm:block">
+          <div className="hidden min-w-[150px] text-left leading-tight sm:block">
             <div className="text-lg font-black tracking-tight">DYM MALL</div>
-            <div className="text-xs text-slate-500">동영엠텍 전자기기 쇼핑몰 개발/테스트 버전</div>
+            <div className="text-[11px] font-semibold text-slate-500">동영엠텍 전자기기</div>
+            <div className="text-[11px] font-semibold text-slate-500">쇼핑몰 개발/테스트 버전</div>
           </div>
         </button>
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden flex-nowrap items-center gap-1 lg:flex">
           {navItems.map(([id, label]) => (
-            <button key={id} onClick={() => goPage(id)} className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-red-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>{label}</button>
+            <button key={id} onClick={() => goPage(id)} className={`whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold transition ${page === id ? "bg-red-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>{label}</button>
           ))}
         </nav>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 xl:flex">
           <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
             <Search size={16} className="text-slate-400" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} className="w-44 bg-transparent text-sm outline-none" placeholder="제품명/모델명 검색" />
@@ -399,6 +402,7 @@ function Header({ page, setPage, query, setQuery, cartCount, mobileMenu, setMobi
           </div>
           <div className="grid grid-cols-2 gap-2">
             {navItems.map(([id, label]) => <button key={id} onClick={() => goPage(id)} className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">{label}</button>)}
+            <button onClick={() => goPage("mypage")} className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">마이페이지</button>
             <button onClick={() => goPage("admin")} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white">관리자</button>
             <button onClick={() => goPage("cart")} className="rounded-xl bg-slate-950 px-3 py-2 text-sm font-bold text-white">장바구니 {cartCount}</button>
             <button onClick={addFavorite} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">즐겨찾기</button>
@@ -547,9 +551,9 @@ function ProductSquare({ product, index, count, gotoDetail, addCart, addCompare 
         <div className="relative aspect-square overflow-hidden bg-slate-100">
           <ProductPhoto src={mainImage(product)} alt={product.name} className="h-full w-full rounded-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/78 via-slate-950/12 to-transparent" />
-          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5"><span className="rounded-full bg-red-600 px-2 py-1 text-[10px] font-black text-slate-950">{product.category}</span><span className="rounded-full bg-white/95 px-2 py-1 text-[10px] font-black text-slate-900">{String(index + 1).padStart(2, "0")}/{count}</span></div>
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5"><span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black text-white">{product.category}</span><span className="rounded-full bg-white/95 px-2 py-1 text-[10px] font-black text-slate-900">{String(index + 1).padStart(2, "0")}/{count}</span></div>
           {discountRate(product) > 0 && <div className="absolute right-3 top-3 rounded-full bg-rose-500 px-2 py-1 text-[10px] font-black text-white">{discountRate(product)}%</div>}
-          <div className="absolute bottom-0 left-0 right-0 p-4 text-white"><div className="text-[11px] font-bold text-cyan-200">{product.sku}</div><div className="mt-1 line-clamp-2 text-base font-black leading-5">{product.name}</div><div className="mt-2 flex items-end justify-between gap-2"><div>{product.originalPrice && <div className="text-xs text-slate-200 line-through">{fmt(product.originalPrice)}</div>}<div className="text-lg font-black">{fmt(product.price)}</div></div><div className="rounded-xl bg-white/15 px-2 py-1 text-[10px] font-black backdrop-blur">DB 상품</div></div></div>
+          <div className="absolute bottom-0 left-0 right-0 p-4 text-white"><div className="text-[11px] font-bold text-cyan-200">{product.sku}</div><div className="mt-1 line-clamp-2 text-base font-black leading-5">{product.name}</div><div className="mt-2 flex items-end justify-between gap-2"><div>{product.originalPrice && <div className="text-xs text-slate-200 line-through">{fmt(product.originalPrice)}</div>}<div className="text-lg font-black text-sky-300 drop-shadow">{fmt(product.price)}</div></div><div className="rounded-xl bg-white/15 px-2 py-1 text-[10px] font-black backdrop-blur">DB 상품</div></div></div>
         </div>
       </button>
       <div className="grid gap-2 bg-white p-3"><button onClick={() => addCart(product)} className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white">장바구니 담기</button></div>
@@ -558,7 +562,32 @@ function ProductSquare({ product, index, count, gotoDetail, addCart, addCompare 
 }
 
 function ProductsPage({ products, categories, category, setCategory, gotoDetail, addCart, addCompare }: { products: ProductDTO[]; categories: string[]; category: string; setCategory: (value: string) => void; gotoDetail: (product: ProductDTO) => void; addCart: (product: ProductDTO) => void; addCompare: (product: ProductDTO) => void }) {
-  return <section className="mx-auto max-w-7xl px-4 py-10"><PageTitle title="상품 목록" desc="DB에서 불러온 상품입니다. 관리자 편집 후 다시 불러오면 변경 사항이 반영됩니다." /><div className="mt-6 flex gap-3 overflow-x-auto pb-2">{categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-sm font-bold ${category === item ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-600"}`}>{item}</button>)}</div><div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]"><aside className="h-fit rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24"><div className="flex items-center gap-2 font-black"><SlidersHorizontal size={18} /> 필터</div><Filter label="가격대" values={["10만원 이하", "10~30만원", "30만원 이상", "100만원 이상"]} /><Filter label="상품 상태" values={["재고 있음", "무료배송", "설치상담", "납품상담"]} /></aside><div><div className="mb-4 flex items-center justify-between rounded-3xl border border-slate-200 bg-white px-5 py-4"><span className="text-sm font-bold text-slate-600">총 {products.length}개 제품</span><select className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none"><option>인기순</option><option>최신순</option><option>가격 낮은순</option></select></div><div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} gotoDetail={gotoDetail} addCart={addCart} addCompare={addCompare} />)}</div></div></div></section>;
+  const priceFilters = ["10만원 이하", "10~30만원", "30만원 이상", "100만원 이상"];
+  const statusFilters = ["재고 있음", "무료배송", "설치상담", "납품상담"];
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-10">
+      <PageTitle title="상품 목록" desc="DB에서 불러온 상품입니다. 관리자 편집 후 다시 불러오면 변경 사항이 반영됩니다." />
+      <div className="mt-6 flex gap-3 overflow-x-auto pb-2">
+        {categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={`whitespace-nowrap rounded-2xl border px-4 py-2 text-sm font-bold ${category === item ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-600"}`}>{item}</button>)}
+      </div>
+      <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <div className="mr-2 flex items-center gap-2 font-black text-slate-800"><SlidersHorizontal size={18} /> 필터</div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">가격대</span>
+          {priceFilters.map((item) => <button key={item} className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-red-300 hover:bg-red-50">{item}</button>)}
+          <span className="ml-0 rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600 md:ml-3">상태</span>
+          {statusFilters.map((item) => <button key={item} className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-red-300 hover:bg-red-50">{item}</button>)}
+        </div>
+      </div>
+      <div className="mt-6">
+        <div className="mb-4 flex items-center justify-between rounded-3xl border border-slate-200 bg-white px-5 py-4">
+          <span className="text-sm font-bold text-slate-600">총 {products.length}개 제품</span>
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none"><option>인기순</option><option>최신순</option><option>가격 낮은순</option></select>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} gotoDetail={gotoDetail} addCart={addCart} addCompare={addCompare} />)}</div>
+      </div>
+    </section>
+  );
 }
 
 function ProductCard({ product, gotoDetail, addCart, addCompare }: { product: ProductDTO; gotoDetail: (product: ProductDTO) => void; addCart: (product: ProductDTO) => void; addCompare: (product: ProductDTO) => void }) {
