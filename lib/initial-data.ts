@@ -29,11 +29,12 @@ export const categorySeed = [
   { slug: "smart-kitchen-hub", name: "스마트 키친 허브", description: "스마트 키친 허브 제품군" },
   { slug: "kitchen-tv", name: "주방 TV", description: "주방 TV 제품군" },
   { slug: "door-lock", name: "도어락", description: "도어락 제품군" },
-  { slug: "built-in-tv", name: "매입 TV", description: "매입형 TV 제품군" },
+  { slug: "bathroom-tv", name: "욕실TV", description: "욕실TV 및 매입형 TV 제품군" },
   { slug: "bathroom-phone", name: "욕실폰", description: "욕실폰 제품군" },
   { slug: "wireless-ap", name: "무선 AP", description: "무선 AP 제품군" },
   { slug: "kitchen-radio", name: "주방 라디오", description: "주방 라디오 제품군" },
-  { slug: "life-info-device", name: "생활 정보기", description: "생활 정보기 제품군" }
+  { slug: "life-info-device", name: "생활 정보기", description: "생활 정보기 제품군" },
+  { slug: "others", name: "기타", description: "기타 제품군" }
 ] as const;
 
 const CATALOG = (name: string) => `/catalog/${name.toLowerCase()}`;
@@ -61,9 +62,9 @@ function specs(category: string, model: string): { key: string; value: string; g
       { key: "인증", value: "비밀번호 / 카드 / 모델별 옵션", group: "보안" },
       { key: "설치", value: "현장 문 타입 확인 후 설치", group: "설치" },
     ],
-    "매입 TV": [
+    "욕실TV": [
       { key: "모델명", value: model, group: "기본" },
-      { key: "제품군", value: "매입 TV", group: "기본" },
+      { key: "제품군", value: "욕실TV", group: "기본" },
       { key: "구성", value: "매입형 디스플레이", group: "기능" },
       { key: "설치", value: "욕실/공간 매입 설치 상담", group: "설치" },
     ],
@@ -125,7 +126,7 @@ const productsInput: ProductInput[] = [
     rating: 4.9,
     reviewCount: 18,
     isFeatured: true,
-    images: buildImageSet("DM-N330VS", ["dm-n330vs-01.png", "dm-n330vs-02.png", "dm-n330vs_03.png"]),
+    images: buildImageSet("DM-N330VS", ["dm-n330vs_01.png", "dm-n330vs_02.png", "dm-n330vs_03.png"]),
     specs: specs("스마트 키친 허브", "DM-N330VS")
   },
   {
@@ -183,12 +184,12 @@ const productsInput: ProductInput[] = [
     specs: specs("스마트 키친 허브", "DM-N160")
   },
   {
-    sku: "DYM-KTV-DM-D5130Q",
-    slug: "dm-d5130q",
-    name: "DM-D5130Q",
+    sku: "DYM-KTV-DM-D5330Q",
+    slug: "dm-d5330q",
+    name: "DM-D5330Q",
     category: "주방 TV",
     categorySlug: "kitchen-tv",
-    description: "DM-D5130Q 주방 TV 모델입니다.",
+    description: "DM-D5330Q 주방 TV 모델입니다.",
     price: 329000,
     originalPrice: 359000,
     stockStatus: "재고 있음",
@@ -197,8 +198,8 @@ const productsInput: ProductInput[] = [
     rating: 4.8,
     reviewCount: 15,
     isFeatured: true,
-    images: buildImageSet("DM-D5130Q", ["dm-d5130q_01.png", "dm-d5130q_02.png", "dm-d5130q_03.png"]),
-    specs: specs("주방 TV", "DM-D5130Q")
+    images: buildImageSet("DM-D5330Q", ["dm-d5330q_01.png", "dm-d5330q_02.png", "dm-d5330q_03.png"]),
+    specs: specs("주방 TV", "DM-D5330Q")
   },
   {
     sku: "DYM-KTV-DM-D5110Q",
@@ -233,7 +234,7 @@ const productsInput: ProductInput[] = [
     rating: 4.7,
     reviewCount: 14,
     isFeatured: false,
-    images: buildImageSet("DM-D5102Q", ["dm-d5102q_01.png", "dm-d5102q_02.png", "dm-d5102q_03.png"], ["dm-d5102q_info01.jpg", "dm-d5102q_info02.jpg", "dm-d5102q_info03.jpg"]),
+    images: buildImageSet("DM-D5102Q", ["dm-d5102q_01.png", "dm-d5100q_02.png", "dm-d5100q_03.png"], ["dm-d5102q_info01.jpg", "dm-d5102q_info02.jpg", "dm-d5102q_info03.jpg"]),
     specs: specs("주방 TV", "DM-D5102Q")
   },
   {
@@ -287,7 +288,7 @@ const productsInput: ProductInput[] = [
     rating: 4.5,
     reviewCount: 1,
     isFeatured: false,
-    images: buildImageSet("DM-D5102G", ["dm-d5102_01.png", "dm-d5102_02.png"]),
+    images: buildImageSet("DM-D5102G", ["dm-d5102g_01.png", "dm-d5102g_02.png", "dm-d5102g_03.png"]),
     specs: specs("주방 TV", "DM-D5102G")
   },
   {
@@ -384,19 +385,19 @@ const productsInput: ProductInput[] = [
     sku: "DYM-BTV-DM-9102X",
     slug: "dm-9102x",
     name: "DM-9102X",
-    category: "매입 TV",
-    categorySlug: "built-in-tv",
-    description: "DM-9102X 매입 TV 모델입니다.",
+    category: "욕실TV",
+    categorySlug: "bathroom-tv",
+    description: "DM-9102X 욕실TV/매입형 TV 모델입니다.",
     price: 359000,
     originalPrice: 399000,
     stockStatus: "설치 상담",
     deliveryText: "매입형 설치 상담",
-    badge: "매입 TV",
+    badge: "욕실TV",
     rating: 4.6,
     reviewCount: 5,
     isFeatured: false,
     images: buildImageSet("DM-9102X", ["dm-9102x_01.png", "dm-9102x_02.png"]),
-    specs: specs("매입 TV", "DM-9102X")
+    specs: specs("욕실TV", "DM-9102X")
   },
   {
     sku: "DYM-BPHONE-DM-709B",
@@ -449,7 +450,7 @@ const productsInput: ProductInput[] = [
     rating: 4.7,
     reviewCount: 6,
     isFeatured: false,
-    images: buildImageSet("DM-AP370T", ["dm-ap370t_01.jpg", "dm-ap370t_02.jpg", "dm-ap370t_03.jpg"]),
+    images: buildImageSet("DM-AP370T", ["dm-ap370t-01.png", "dm-ap370t-02.png", "dm-ap370t-03.png"]),
     specs: specs("무선 AP", "DM-AP370T")
   },
   {

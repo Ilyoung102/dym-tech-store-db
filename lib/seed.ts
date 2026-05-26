@@ -146,11 +146,27 @@ export async function seedDatabase(mode: SeedMode = "safe") {
 }
 
 export async function seedIfEmpty() {
-  const [productCount, adminCount, imageCount] = await Promise.all([prisma.product.count(), prisma.admin.count(), prisma.productImage.count()]);
+  const expectedProducts = buildSeedProducts();
+  const expectedSkus = new Set(expectedProducts.map((product) => product.sku));
+  const expectedCategorySlugs = categorySeed.map((category) => category.slug);
+  const [productCount, adminCount, imageCount, currentProducts, currentCategories, oldProductImage] = await Promise.all([
+    prisma.product.count(),
+    prisma.admin.count(),
+    prisma.productImage.count(),
+    prisma.product.findMany({ select: { sku: true }, take: 200 }),
+    prisma.productCategory.findMany({ select: { slug: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.productImage.findFirst({ where: { url: { startsWith: "/products/" } }, select: { id: true } })
+  ]);
 
-  if (productCount === 0) {
-    const result = await seedDatabase("safe");
-    return { skipped: false, ...result };
+  const currentSkuSet = new Set(currentProducts.map((product) => product.sku));
+  const missingExpectedProduct = expectedProducts.some((product) => !currentSkuSet.has(product.sku));
+  const unexpectedProductCount = productCount !== expectedProducts.length;
+  const categoryOrderChanged = currentCategories.map((category) => category.slug).join("|") !== expectedCategorySlugs.join("|");
+  const hasOldProductImagePath = !!oldProductImage;
+
+  if (productCount === 0 || missingExpectedProduct || unexpectedProductCount || categoryOrderChanged || hasOldProductImagePath) {
+    const result = await seedDatabase("resetCatalog");
+    return { skipped: false, autoResetCatalog: true, reason: { productCount, missingExpectedProduct, unexpectedProductCount, categoryOrderChanged, hasOldProductImagePath }, ...result };
   }
 
   if (imageCount === 0) {

@@ -566,7 +566,7 @@ function AdminProductManager({ products, sections, reloadProducts, setToast }: {
   useEffect(() => { if (!selectedId && products[0]) setSelectedId(products[0].id); }, [products, selectedId]);
 
   async function resetCatalog() {
-    if (!confirm("기본 42개 상품과 첨부 제품 이미지 배치를 다시 구성합니다. 기존 상품 수정 내용과 이미지 배치는 초기값으로 돌아갑니다. 개발 테스트 DB에서만 사용하세요.")) return;
+    if (!confirm("신규 카탈로그 21개 모델과 제품별 매칭 이미지를 다시 구성합니다. 기존 상품 수정 내용과 이미지 배치는 초기값으로 돌아갑니다. 개발 테스트 DB에서만 사용하세요.")) return;
     setResetting(true);
     try {
       const response = await fetch("/api/admin/seed", {
@@ -577,7 +577,7 @@ function AdminProductManager({ products, sections, reloadProducts, setToast }: {
       if (!response.ok) throw new Error("기본 상품/이미지 구성 실패");
       await reloadProducts();
       setSelectedId("");
-      setToast({ kind: "ok", message: "첨부 제품 이미지 기반 42개 기본 상품 구성이 다시 생성되었습니다." });
+      setToast({ kind: "ok", message: "신규 카탈로그 21개 모델과 제품별 이미지 매칭이 다시 생성되었습니다." });
     } catch (error) {
       console.error(error);
       setToast({ kind: "error", message: "기본 상품/이미지 구성 실패: DB 연결과 관리자 로그인을 확인하세요." });
@@ -587,10 +587,10 @@ function AdminProductManager({ products, sections, reloadProducts, setToast }: {
   }
 
   if (!selected) {
-    return <div className="grid gap-4"><EmptyState title="상품이 없습니다." desc="기본 상품/이미지 구성을 먼저 생성하세요." /><button onClick={resetCatalog} disabled={resetting} className="rounded-2xl bg-red-600 px-5 py-4 font-black text-slate-950 disabled:opacity-60">{resetting ? "구성 중..." : "기본 42개 상품/이미지 구성"}</button></div>;
+    return <div className="grid gap-4"><EmptyState title="상품이 없습니다." desc="기본 상품/이미지 구성을 먼저 생성하세요." /><button onClick={resetCatalog} disabled={resetting} className="rounded-2xl bg-red-600 px-5 py-4 font-black text-slate-950 disabled:opacity-60">{resetting ? "구성 중..." : "신규 카탈로그 21개 모델/이미지 구성"}</button></div>;
   }
 
-  return <div className="grid gap-5 lg:grid-cols-[360px_1fr]"><div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 grid gap-3"><div className="flex items-center justify-between"><h3 className="text-xl font-black">상품 목록</h3><button onClick={() => void reloadProducts()} className="rounded-xl border px-3 py-2 text-sm font-black"><RefreshCw size={15} className="inline" /> 새로고침</button></div><button onClick={resetCatalog} disabled={resetting} className="rounded-2xl border border-cyan-300 bg-red-50 px-4 py-3 text-sm font-black text-cyan-800 disabled:opacity-60">{resetting ? "기본 구성 적용 중..." : "기본 42개 상품/이미지 재구성"}</button><p className="text-xs leading-5 text-slate-500">첨부 제품 이미지를 이용해 주방TV 15개, 욕실TV폰 6개, 스마트 키친 허브 6개, 도어락 6개, 무선 AP 3개, 생활정보기기 3개, 무인택배시스템 1개, 데스크뷰 2개를 다시 배치합니다.</p></div><div className="grid max-h-[680px] gap-2 overflow-y-auto pr-1">{products.map((product) => <button key={product.id} onClick={() => setSelectedId(product.id)} className={`flex gap-3 rounded-2xl border p-3 text-left transition ${selected.id === product.id ? "border-red-400 bg-red-50" : "border-slate-200 hover:bg-slate-50"}`}><ProductPhoto src={mainImage(product)} alt={product.name} className="h-16 w-16 shrink-0" /><div className="min-w-0"><div className="truncate text-sm font-black">{product.name}</div><div className="mt-1 text-xs text-slate-500">{product.category} · {fmt(product.price)}</div><div className="mt-1 text-xs text-slate-400">{product.sku}</div></div></button>)}</div></div><ProductEditor key={selected.id} product={selected} sections={sections} reloadProducts={reloadProducts} setToast={setToast} /></div>;
+  return <div className="grid gap-5 lg:grid-cols-[360px_1fr]"><div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 grid gap-3"><div className="flex items-center justify-between"><h3 className="text-xl font-black">상품 목록</h3><button onClick={() => void reloadProducts()} className="rounded-xl border px-3 py-2 text-sm font-black"><RefreshCw size={15} className="inline" /> 새로고침</button></div><button onClick={resetCatalog} disabled={resetting} className="rounded-2xl border border-cyan-300 bg-red-50 px-4 py-3 text-sm font-black text-cyan-800 disabled:opacity-60">{resetting ? "기본 구성 적용 중..." : "신규 카탈로그 21개 모델/이미지 재구성"}</button><p className="text-xs leading-5 text-slate-500">첨부한 DYM-Product Image 기준으로 스마트 키친 허브 4개, 주방 TV 7개, 도어락 4개, 욕실TV 1개, 욕실폰 2개, 무선 AP 1개, 주방 라디오 1개, 생활 정보기 1개 모델을 다시 배치합니다.</p></div><div className="grid max-h-[680px] gap-2 overflow-y-auto pr-1">{products.map((product) => <button key={product.id} onClick={() => setSelectedId(product.id)} className={`flex gap-3 rounded-2xl border p-3 text-left transition ${selected.id === product.id ? "border-red-400 bg-red-50" : "border-slate-200 hover:bg-slate-50"}`}><ProductPhoto src={mainImage(product)} alt={product.name} className="h-16 w-16 shrink-0" /><div className="min-w-0"><div className="truncate text-sm font-black">{product.name}</div><div className="mt-1 text-xs text-slate-500">{product.category} · {fmt(product.price)}</div><div className="mt-1 text-xs text-slate-400">{product.sku}</div></div></button>)}</div></div><ProductEditor key={selected.id} product={selected} sections={sections} reloadProducts={reloadProducts} setToast={setToast} /></div>;
 }
 
 function ProductEditor({ product, sections, reloadProducts, setToast }: { product: ProductDTO; sections: ProductSectionDTO[]; reloadProducts: () => Promise<void>; setToast: (toast: Toast) => void }) {
