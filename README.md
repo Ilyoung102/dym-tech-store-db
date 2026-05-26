@@ -11,7 +11,7 @@
 
 - Next.js App Router + TypeScript
 - Prisma + PostgreSQL 상품 DB
-- 첨부 제품 이미지 `/public/products` 반영
+- 첨부 제품 이미지는 `/public/catalog/original`, `/public/catalog/thumb`, `/public/catalog/detail` 구조로 반영
 - 기본 42개 제품 슬롯 seed
   - 주방TV 15개
   - 욕실TV폰 6개
@@ -292,3 +292,11 @@ https://YOUR_DOMAIN/api/admin/blob-status
 - 관리자 화면은 실제 DB 상품 ID가 필요하므로 DB 동기화 완료 후 진입하도록 보호했습니다.
 - 홈 대표 배경은 `next/image` priority 이미지로 변경하고, 어두운 오버레이를 줄여 배경 이미지가 더 보이도록 조정했습니다.
 - 상품 API의 자동 시드 검사는 서버 인스턴스당 1회만 수행하도록 줄였습니다.
+
+
+## v0.4.0 상세 INFO 이미지 품질 복구
+- 상세 INFO 이미지는 썸네일/축소 WebP가 아니라 원본 비율 그대로 표시하도록 수정했습니다.
+- 긴 세로형 상세 설명 이미지를 fixed height 박스에 억지로 맞추지 않도록 제거했습니다.
+- INFO detail WebP도 원본 해상도 보존 + 고품질로 다시 생성했습니다.
+- public/products 구버전 폴더가 있다면 완전히 삭제되도록 정리했습니다.
+- 제품 카드/목록은 여전히 thumb WebP를 사용하므로 목록 로딩 최적화는 유지됩니다.

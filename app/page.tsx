@@ -84,6 +84,19 @@ function toWebpPath(src: string, variant: ImageVariant) {
   return normalized;
 }
 
+function infoReadableSrc(src?: string) {
+  if (!src) return "";
+  if (src.startsWith("http") || src.startsWith("data:") || src.startsWith("blob:")) return src;
+  const normalized = src.replaceAll("\\", "/");
+  if (normalized.startsWith("/info/original/")) return normalized;
+  if (normalized.startsWith("/info/detail/")) {
+    return normalized.replace("/info/detail/", "/info/original/").replace(/\.webp$/i, ".jpg");
+  }
+  if (normalized.startsWith("/info/thumb/")) {
+    return normalized.replace("/info/thumb/", "/info/original/").replace(/\.webp$/i, ".jpg");
+  }
+  return normalized;
+}
 
 
 async function prepareImageForUpload(file: File): Promise<File> {
@@ -586,7 +599,55 @@ function DetailPage({ product, galleryIndex, setGalleryIndex, setPage, addCart, 
 }
 
 function SpecTable({ product, infoImages }: { product: ProductDTO; infoImages: ProductDTO["images"] }) {
-  return <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-2xl font-black">제품 상세 정보</h2><p className="mt-2 text-slate-500">업로드한 제품 스펙 및 상세 안내 이미지를 기준으로 구성했습니다.</p><div className="mt-6 overflow-hidden rounded-2xl border border-slate-200"><table className="w-full text-sm"><tbody>{product.specs.map((spec) => <tr key={spec.id || spec.key} className="border-b border-slate-100 last:border-0"><th className="w-40 bg-slate-50 px-4 py-3 text-left font-black text-slate-700">{spec.key}</th><td className="px-4 py-3 text-slate-600">{spec.value}</td></tr>)}</tbody></table></div><div className="mt-6 grid gap-3 md:grid-cols-3">{["카탈로그 PDF", "제품 매뉴얼 PDF", "인증서 PDF"].map((item) => <button key={item} className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold"><FileText size={18} /> {item}</button>)}</div><div className="mt-8"><h3 className="text-xl font-black">상세 설명 이미지</h3><p className="mt-2 text-sm text-slate-500">INFO-image 폴더 기준으로 제품 상세 설명 이미지를 배치합니다.</p>{infoImages.length ? <div className="mt-4 grid gap-4">{infoImages.map((image) => <div key={image.id || image.url} className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-50 p-3"><ProductPhoto src={image.url} alt={image.alt || `${product.name} 상세`} className="h-[680px] w-full" variant="detail" large /></div>)}</div> : <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm font-bold text-slate-500">[이미지 파일 필요]</div>}</div></div>;
+  return (
+    <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-2xl font-black">제품 상세 정보</h2>
+      <p className="mt-2 text-slate-500">업로드한 제품 스펙 및 상세 안내 이미지를 기준으로 구성했습니다.</p>
+      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+        <table className="w-full text-sm">
+          <tbody>
+            {product.specs.map((spec) => (
+              <tr key={spec.id || spec.key} className="border-b border-slate-100 last:border-0">
+                <th className="w-40 bg-slate-50 px-4 py-3 text-left font-black text-slate-700">{spec.key}</th>
+                <td className="px-4 py-3 text-slate-600">{spec.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-6 grid gap-3 md:grid-cols-3">
+        {["카탈로그 PDF", "제품 매뉴얼 PDF", "인증서 PDF"].map((item) => (
+          <button key={item} className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold">
+            <FileText size={18} /> {item}
+          </button>
+        ))}
+      </div>
+      <div className="mt-8">
+        <h3 className="text-xl font-black">상세 설명 이미지</h3>
+        <p className="mt-2 text-sm text-slate-500">INFO 이미지는 글자 식별이 중요하므로 썸네일이 아니라 원본 비율 그대로 표시합니다.</p>
+        {infoImages.length ? (
+          <div className="mt-4 grid gap-6">
+            {infoImages.map((image) => {
+              const src = infoReadableSrc(image.url);
+              return (
+                <figure key={image.id || image.url} className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-2 shadow-sm">
+                  <img
+                    src={src}
+                    alt={image.alt || `${product.name} 상세`}
+                    loading="lazy"
+                    decoding="async"
+                    className="block h-auto w-full rounded-[1.2rem] object-contain"
+                  />
+                </figure>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm font-bold text-slate-500">[이미지 파일 필요]</div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function ComparePage({ compare, setPage }: { compare: ProductDTO[]; setPage: (page: PageName) => void }) {
